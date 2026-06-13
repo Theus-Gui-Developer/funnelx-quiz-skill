@@ -38,7 +38,7 @@ Depois de instalada, use a skill quando o usuário pedir criação, edição, au
 - Atualize a `description` sempre que ampliar ou restringir o escopo de uso da skill.
 - Guarde documentação longa em `references/` e deixe no `SKILL.md` apenas o workflow operacional e regras críticas.
 - Não inclua segredos, tokens, URLs privadas ou dados de clientes nos arquivos da skill.
-- Prefira exemplos compactos e schemas mínimos. Payloads grandes devem ser divididos em blocos, como o workflow de `append_quiz_steps`.
+- Prefira exemplos representativos e schemas enxutos: compactos, mas bons o bastante para mostrar quizzes elaborados da Funilix. Payloads grandes devem ser divididos em blocos, como o workflow de `append_quiz_steps`.
 
 ## Antes de qualquer coisa: consultar tools de contexto
 
@@ -47,6 +47,7 @@ Antes de criar ou reestruturar um funil, chame estas tools para ter contexto atu
 - `list_supported_step_kinds` — kinds com componentes aceitos e obrigatórios
 - `list_supported_component_types` — catálogo oficial com schemas e notas
 - `get_component_schema("<tipo>")` — schema completo antes de usar um componente novo
+- `list_audio_assets` — biblioteca de áudios reais do usuário para música, sons de interação, toast ou `audioPlayer`
 
 ---
 
@@ -55,11 +56,12 @@ Antes de criar ou reestruturar um funil, chame estas tools para ter contexto atu
 ```
 1. create_blank_funnel            → cria o funil, obtém slug e id
 2. update_funnel_global_presets   → aplica tema exclusivo do nicho
-3. append_quiz_steps (bloco 1)    → intro + Q1–Q3
-4. append_quiz_steps (bloco 2)    → Q4–Q6 + content (transição) + capture
-5. append_quiz_steps (bloco 3)    → result (diagnóstico) + content (depoimentos) + result (oferta)
-6. update_funnel_metadata         → marca conversionStepIds com o id da última etapa
-7. get_quiz_blueprint             → valida 0 warnings
+3. list_audio_assets              → consultar antes de usar qualquer audioUrl/soundUrl
+4. append_quiz_steps (bloco 1)    → intro + Q1–Q3
+5. append_quiz_steps (bloco 2)    → Q4–Q6 + content (transição) + capture
+6. append_quiz_steps (bloco 3)    → result (diagnóstico) + content (depoimentos) + result (oferta)
+7. update_funnel_metadata         → marca conversionStepIds com o id da última etapa
+8. get_quiz_blueprint             → valida 0 warnings
 ```
 
 **Nunca enviar todas as etapas em um único append.** Sempre 3 blocos de no máximo 4 etapas cada.
@@ -103,28 +105,75 @@ A plataforma define 4 fases para funis de alta conversão:
 
 ---
 
-## Tema Global
+## Tema Global e Header Oficial
 
-Cada nicho tem identidade visual própria. Leia `references/themes.md` para temas completos.
+Cada nicho precisa de uma identidade visual própria, mas o header/progresso oficial já existe no tema global. Leia `references/themes.md` antes de criar o funil.
+
+Use `update_funnel_global_presets` para configurar:
+- `theme.colors` — primária, texto, fundo e borda.
+- `theme.typography` — fonte, hierarquia e peso.
+- `theme.layout` — largura, raio, sombra e gaps.
+- `theme.header` — logo/texto/emoji, progresso, voltar, cores e altura.
+- `theme.background` — imagem global e overlay quando fizer sentido.
+- `theme.form` — campos, foco, labels e bordas.
+- `settings.gamification` — score, música e efeitos.
+
+Regras obrigatórias:
+
+- Header oficial fica em `theme.header`. Não crie header paralelo com `text`, `image`, `codeBlock` ou `layoutContainer`.
+- Não recrie barra de progresso, logo, botão voltar ou topo fixo dentro das etapas.
+- Use `headerOverride` só como exceção real, por exemplo ocultar progresso em uma etapa especial ou trocar o logo apenas em uma etapa de campanha.
+- Se só quer uma headline visual na etapa, use `text` com `useTheme: true`; isso não é header.
+- Masculino costuma usar `borderRadius: "10px"` ou `"12px"`; feminino pode usar `"22px"` ou `"50px"` em botões.
+
+---
+
+## Gamificação Global
+
+Use `update_funnel_global_presets` com `settings.gamification` para gamificação do funil inteiro.
+
+Gamificação aqui não é decoração. Use como loop de retenção: microcompromissos fáceis, feedback imediato, micro-recompensas, progressão visível e sensação de conquista. O objetivo é manter atenção, gerar dopamina em momentos-chave e fazer o usuário querer chegar ao diagnóstico/oferta.
 
 ```js
-{
-  primaryColor, secondaryColor, accentColor,
-  backgroundColor, textColor, fontFamily, borderRadius,
-  buttonStyle: { backgroundColor, textColor, borderRadius, fontSize, fontWeight, padding },
-  headerStyle: { backgroundColor, progressColor, textColor },
-  optionStyle: { backgroundColor, borderColor, borderRadius, padding,
-                 selectedBackgroundColor, selectedBorderColor, selectedTextColor }
+settings: {
+  gamification: {
+    enabled: true,
+    persistSession: true,
+    score: { enabled: true, scoreKey: "saldo", label: "Saldo desbloqueado", prefix: "R$", position: "aboveHeader" },
+    backgroundMusic: { enabled: false, audioUrl: "", volume: 0.45, loop: true, autoPlay: true, showControl: false },
+    interactionEffects: { enabled: true, rules: [] }
+  }
 }
 ```
 
-**Regra visual:** masculino → `borderRadius: "10px"` | feminino → `borderRadius: "50px"` (pill)
+Regras críticas:
+
+- Placar novo fica em `settings.gamification.score`; não use `scoreCounter` em funis novos.
+- Música nova fica em `settings.gamification.backgroundMusic`; não use `backgroundMusic` como componente em funis novos.
+- Antes de preencher qualquer `audioUrl` ou `soundUrl`, chame `list_audio_assets` e use somente URLs retornadas pela biblioteca do usuário.
+- Nunca invente URL de áudio. Se não houver áudio disponível, deixe o recurso desligado ou peça ao usuário para enviar um arquivo.
+- Vibração, som curto e efeitos visuais ficam em `interactionEffects.rules`.
+- Gatilhos: `buttonClick`, `optionSelect`, `optionAutoAdvance`, `timerComplete`, `pricingClick`, `stepAdvance`, `formValidationError`, `flowComplete`.
+- Vibração: `light`, `success`, `impact`. Visual: `screenFlash`, `shake`, `successPulse`.
+- `gamifiedModal` e `iphoneToast` são componentes de etapa para mensagens com copy, imagem, CTA ou prova social.
+- `gamificationOverride` na etapa ajusta efeitos locais e pode somar score com `score: { enabled: true, value: 10 }`.
+- Para embed manual com vibração, o iframe precisa de `allow="clipboard-write; vibrate"`.
+
+Score/deltas:
+
+- `options.items[].scoreDeltaEnabled` usa `value` numérico.
+- `button.scoreDeltaEnabled` usa `scoreDelta`.
+- `form.fields[].scoreDeltaEnabled` funciona em campos `number`.
+- `weightSlider` e `heightSlider` usam `scoreDeltaEnabled`.
+- `gamificationOverride.score` soma ao avançar a etapa.
 
 ---
 
 ## Regras Críticas de Componentes
 
-Leia `references/components.md` para o catálogo completo com schemas e exemplos de todos os 24 componentes.
+Leia `references/components.md` para o catálogo completo com schemas e exemplos de todos os 26 componentes.
+
+Um quiz Funilix bem elaborado combina tema global forte, componentes nativos e progressão visual. Não monte páginas genéricas com blocos HTML simulando tudo. Use os componentes certos para mostrar diagnóstico, prova, comparação, oferta, urgência e feedback.
 
 ### useTheme — tabela de decisão
 
@@ -141,6 +190,7 @@ Leia `references/components.md` para o catálogo completo com schemas e exemplos
 | Situação | ✅ Correto | ❌ Errado |
 |---|---|---|
 | Bloco com cor de fundo | `argument` com `backgroundColor` + `borderColor` | `text` com `<div style='background:...'>` |
+| Header/logo/progresso | `theme.header` global | `text`, `image` ou `codeBlock` no topo de toda etapa |
 | Preço / oferta | `pricingCard` com `useTheme: true` | `text` com HTML de gradiente |
 | Layout complexo / cards | `codeBlock` com html limpo + `customCSS` separado | `text` com HTML inline pesado |
 | Score / diagnóstico visual | `level` percentage 22–35% | — |
@@ -148,6 +198,8 @@ Leia `references/components.md` para o catálogo completo com schemas e exemplos
 | Gráfico de queda/evolução | `cartesianChart` | — |
 | Antes/depois visual | `comparison` | — |
 | Toast de urgência | `notification` variant warning | — |
+| Conquista/desbloqueio | `gamifiedModal` | preset global com copy fixa |
+| Prova social estilo app | `iphoneToast` | `notification` empilhado sem contexto |
 
 ### Regras específicas dos componentes mais usados
 
@@ -217,6 +269,7 @@ Leia `references/components.md` para o catálogo completo com schemas e exemplos
 **Princípios de conversão da plataforma:**
 - Promessa específica com benefício claro desde a intro
 - Microcompromissos progressivos — perguntas fáceis primeiro
+- Feedback imediato e micro-recompensas para reforçar avanço, escolha e conclusão
 - Personalização percebida — oferta como consequência das respostas do lead
 - Uma intenção por etapa — sem CTAs concorrentes na mesma tela
 - Fechamento orientado à decisão — CTA claro + prova + risco reduzido + urgência honesta
@@ -227,6 +280,7 @@ Leia `references/components.md` para o catálogo completo com schemas e exemplos
 
 - [ ] `create_blank_funnel` com slug descritivo kebab-case
 - [ ] `update_funnel_global_presets` com tema exclusivo do nicho
+- [ ] Header/progresso configurado em `theme.header`, sem header paralelo nas etapas
 - [ ] 3 blocos de `append_quiz_steps` sem erro (máx 4 etapas por bloco)
 - [ ] Última etapa é `result` com a oferta completa (17 componentes)
 - [ ] Todos os buttons da oferta com `actionType: url`
@@ -236,6 +290,9 @@ Leia `references/components.md` para o catálogo completo com schemas e exemplos
 - [ ] Sem `text` com `<div style='background:...'>` — usar `argument` com `backgroundColor`
 - [ ] `codeBlock` com CSS em `customCSS`, não inline no html
 - [ ] `pricingCard` para preço — nunca `text` com HTML de gradiente
+- [ ] Gamificação global em `settings.gamification`, não em componentes legados
+- [ ] Todo `audioUrl`/`soundUrl` veio de `list_audio_assets` quando áudio estiver habilitado
+- [ ] `gamifiedModal`/`iphoneToast` usados como componentes quando houver copy editável
 
 ---
 
@@ -264,14 +321,17 @@ Deletar etapa:       delete_quiz_step (obter stepId via blueprint)
 - Não pedir captura muito cedo, sem valor percebido
 - Não usar `replace_quiz_structure` gigante quando `append_quiz_steps` resolve
 - Não criar etapas com muitos componentes concorrendo por atenção
+- Não criar header paralelo com `text`, `image`, `layoutContainer` ou `codeBlock`
+- Não duplicar barra de progresso ou logo dentro dos componentes
 - Não usar `text` com HTML de cor de fundo — sempre `argument` com `backgroundColor`
 - Não misturar CSS no campo `html` do `codeBlock`
 - Não usar `text` para bloco de preço — sempre `pricingCard`
 - Não encerrar com diagnóstico genérico que poderia servir para qualquer pessoa
+- Não inventar URLs de áudio para música, efeitos, toast ou `audioPlayer`
 
 ---
 
 ## Referências
 
-- `references/components.md` — catálogo dos 24 componentes com schemas e exemplos completos
+- `references/components.md` — catálogo dos 26 componentes com schemas e exemplos completos
 - `references/themes.md` — temas prontos por nicho com JSON completo para `update_funnel_global_presets`

@@ -19,7 +19,7 @@ npx skills add Theus-Gui-Developer/funnelx-quiz-skill
 ## Estrutura
 
 - `SKILL.md` - instruções principais, frontmatter e workflow obrigatório.
-- `references/components.md` - catálogo de componentes FunnelX, schemas e exemplos.
+- `references/components.md` - catálogo de 26 componentes FunnelX, schemas e exemplos.
 - `references/themes.md` - temas prontos por nicho e regras de uso.
 
 ## Quando Usar
@@ -30,6 +30,9 @@ Use esta skill quando o usuário pedir para:
 - adicionar, remover ou reorganizar etapas;
 - editar componentes e settings;
 - ajustar tema global;
+- configurar `theme.header` global sem criar header paralelo nas etapas;
+- configurar gamificação global, placar, música, efeitos por gatilho e gamificação por etapa;
+- usar áudios enviados pelo usuário em música, efeitos, toast ou `audioPlayer`;
 - melhorar copy, oferta, diagnóstico ou conversão;
 - validar estrutura do funil via blueprint e warnings.
 
@@ -42,6 +45,7 @@ A skill presume que o agente tenha acesso às tools MCP da FunnelX, como:
 - `list_supported_step_kinds`
 - `list_supported_component_types`
 - `get_component_schema`
+- `list_audio_assets`
 - `append_quiz_steps`
 - `update_funnel_global_presets`
 - `update_funnel_metadata`

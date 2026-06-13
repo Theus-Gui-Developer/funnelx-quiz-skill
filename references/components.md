@@ -1,4 +1,4 @@
-# Catálogo de Componentes FunnelX (24 componentes)
+# Catálogo de Componentes FunnelX (26 componentes)
 
 ## Compatibilidade por Kind
 
@@ -7,15 +7,41 @@ Exceções: `options` só em `question` | `form` só em `capture`
 
 ---
 
+## Composição de Quiz Elaborado
+
+Um quiz real da Funilix deve parecer uma experiência guiada, não uma sequência de textos simples. Use o header global do tema, componentes nativos e progressão visual.
+
+| Momento | Componentes recomendados | Função |
+|---|---|---|
+| Intro premium | `text`, `image` ou `video`, `argument`, `button` | Promessa, autoridade e primeiro clique |
+| Pergunta simples | `text`, `options`, `progressArgument` opcional | Microcompromisso e score |
+| Pergunta com contexto | `text`, `image`, `options`, `iphoneToast` opcional | Diagnóstico com feedback sensorial |
+| Multiselect | `text`, `options` com `multiSelect: true`, `button` | Coletar sinais sem auto-avançar |
+| Transição educativa | `text`, `argument`, `comparison`, `cartesianChart`, `button` | Aumentar consciência do problema |
+| Captura | `text`, `form`, `button`, `testimonial` ou `faq` | Capturar após valor percebido |
+| Diagnóstico | `text`, `level`, `progressArgument`, `gamifiedModal`, `button` | Entregar conclusão e recompensa |
+| Oferta | `text`, `countdown`, `notification`, `button`, `argument`, `comparison`, `codeBlock`, `pricingCard`, `testimonial`, `faq` | Converter com prova, valor e urgência |
+
+Regras de composição:
+
+- Header, progresso, botão voltar e logo pertencem a `theme.header`, não aos componentes.
+- Use `text` para copy, não para cards, preço, header, grids ou seções com fundo complexo.
+- Use `argument`, `comparison`, `progressArgument`, `level`, `cartesianChart`, `pricingCard` e `testimonial` para mostrar que a Funilix faz quizzes elaborados com componentes nativos.
+- Use `codeBlock` apenas para layouts realmente customizados, como cards de módulos, stack de bônus ou mockups de app.
+- Não coloque CSS inline pesado em `text`; se precisa de CSS, use `codeBlock` com `customCSS`.
+
+---
+
 ## 1. text
-Bloco de texto rico (TipTap). Apenas texto — sem cor de fundo, sem cards, sem layouts.
+Bloco de texto rico (TipTap). Apenas texto: sem cor de fundo, sem cards, sem layouts e sem header paralelo.
 
 Papel estratégico: headline, promessa, instrução, prova verbal, CTA contextual.
 
 ```json
 { "type": "text", "settings": { "content": "<h2 style='text-align:center;'>Título</h2><p>Parágrafo</p>", "useTheme": true } }
 ```
-**NÃO USE** `<div style='background:...'>` — use `argument` com `backgroundColor`.
+**NÃO USE** `<div style='background:...'>` - use `argument` com `backgroundColor`.
+**NÃO USE** `text` para simular logo, barra de progresso ou header; use `theme.header`.
 
 ---
 
@@ -32,6 +58,8 @@ Papel estratégico: mover a decisão para o próximo passo com ação explícita
     "actionType": "nextStep",  // nextStep | url | specificStep
     "url": "",                  // obrigatório se actionType = url
     "targetStepId": "",         // obrigatório se actionType = specificStep
+    "scoreDeltaEnabled": false,
+    "scoreDelta": 10,
     "useTheme": true
   }
 }
@@ -57,6 +85,7 @@ Papel estratégico: ancorar percepção visual, contexto e desejo. Evite imagem 
   }
 }
 ```
+Não use `image` para repetir logo no topo de todas as etapas. Logo global pertence a `theme.header` com `contentType: "image"`.
 
 ---
 
@@ -70,14 +99,15 @@ Papel estratégico: conduzir autodiagnóstico, segmentação e avanço com micro
   "type": "options",
   "settings": {
     "items": [
-      { "label": "🟡 Opção A", "value": "a" },
-      { "label": "🔴 Opção B", "value": "b" }
+      { "label": "🟡 Opção A", "value": "10", "scoreDeltaEnabled": true },
+      { "label": "🔴 Opção B", "value": "0" }
     ],
     "autoAdvance": true,    // false quando multiSelect: true
     "multiSelect": false
   }
 }
 ```
+Quando `items[].scoreDeltaEnabled: true`, o runtime usa `value` como número para somar/remover do placar global.
 
 ---
 
@@ -92,13 +122,15 @@ Papel estratégico: capturar dados com baixa fricção quando o valor já foi pe
   "settings": {
     "fields": [
       { "type": "text",  "name": "name",  "label": "Seu nome",        "placeholder": "Como posso te chamar?", "required": true, "variableName": "nome" },
-      { "type": "email", "name": "email", "label": "Seu melhor e-mail","placeholder": "voce@email.com",       "required": true, "variableName": "email" }
+      { "type": "email", "name": "email", "label": "Seu melhor e-mail","placeholder": "voce@email.com",       "required": true, "variableName": "email" },
+      { "type": "number", "name": "score", "label": "Pontuação", "required": false, "scoreDeltaEnabled": true }
     ],
     "showLabels": true,
     "useTheme": true
   }
 }
 ```
+Campos `number` com `scoreDeltaEnabled: true` somam o valor preenchido ao placar global após validação.
 
 ---
 
@@ -380,6 +412,8 @@ HTML + CSS + JS customizados. Para layouts que o TipTap não suporta.
 
 Papel estratégico: exibir cards de módulos, grids customizados, checklists técnicos ou qualquer layout estruturado que o `text` não consegue renderizar bem.
 
+Não use `codeBlock` para criar header, progresso ou navegação paralela. Esses elementos pertencem ao tema global.
+
 ```json
 {
   "type": "codeBlock",
@@ -419,6 +453,8 @@ Campos obrigatórios (todos necessários para evitar erro de validação):
 ## 18. weightSlider / 19. heightSlider
 Réguas de peso e altura com variável numérica.
 
+Use `scoreDeltaEnabled: true` quando o valor selecionado deve entrar no placar global ao avançar.
+
 ```json
 {
   "type": "weightSlider",
@@ -426,7 +462,7 @@ Réguas de peso e altura com variável numérica.
     "value": 80, "min": 40, "max": 200, "step": 1,
     "unit": "kg", "allowUnitToggle": true,
     "showValue": true, "valueSize": "xl",
-    "variableName": "peso", "useTheme": true
+    "variableName": "peso", "scoreDeltaEnabled": false, "useTheme": true
   }
 }
 ```
@@ -457,11 +493,13 @@ Papel estratégico: loading animado entre etapas (ex: "analisando suas respostas
 ## 21. audioPlayer
 Player de áudio com waveform visual.
 
+Antes de preencher `settings.audioUrl`, chame `list_audio_assets` e use uma URL real retornada pela biblioteca do usuário.
+
 ```json
 {
   "type": "audioPlayer",
   "settings": {
-    "audioUrl": "https://exemplo.com/audio.mp3",
+    "audioUrl": "https://cdn.exemplo.com/audio-do-usuario.mp3",
     "senderName": "Dr. Silva",
     "messageText": "Ouça o recado especial para você:",
     "showMessage": true,
@@ -524,3 +562,69 @@ Espaço vertical entre componentes.
 ```json
 { "type": "spacer", "settings": { "height": 24, "useTheme": true } }
 ```
+
+---
+
+## 25. gamifiedModal
+Modal de conquista, desbloqueio, bônus ou decisão. É componente de etapa, não preset global.
+
+```json
+{
+  "type": "gamifiedModal",
+  "settings": {
+    "triggerOnStepEnter": true,
+    "content": "<h2 style='text-align:center'><strong>FASE DESBLOQUEADA</strong></h2><p style='text-align:center'>Continue avançando.</p>",
+    "mediaType": "emoji",
+    "emoji": "🔓",
+    "size": "comfortable",
+    "alignment": "center",
+    "showButton": true,
+    "buttonText": "CONTINUAR",
+    "buttonVariant": "glow",
+    "showCloseButton": true,
+    "closeOnBackdrop": false,
+    "useTheme": false
+  }
+}
+```
+
+Regras:
+- Garanta uma saída clara: botão, botão X ou clique fora.
+- Use para conteúdo rico com copy editável; não coloque esse conteúdo em `interactionEffects` global.
+
+---
+
+## 26. iphoneToast
+Notificações estilo iPhone para prova social, venda aprovada, alerta curto ou feedback contextual.
+
+Se `soundEnabled: true`, preencha `soundUrl` somente com URL retornada por `list_audio_assets`.
+
+```json
+{
+  "type": "iphoneToast",
+  "settings": {
+    "items": [
+      {
+        "trigger": "stepEnter",
+        "title": "Venda aprovada!",
+        "description": "Valor:",
+        "valueText": "R$ 37,00",
+        "timeText": "agora",
+        "duration": 3,
+        "delay": 0.5,
+        "soundEnabled": false,
+        "soundUrl": ""
+      }
+    ],
+    "displayMode": "queue",
+    "allowSwipeDismiss": true,
+    "triggerOnStepEnter": true,
+    "useTheme": false
+  }
+}
+```
+
+Triggers:
+- `stepEnter`: dispara ao entrar na etapa.
+- `buttonClick`: informe `targetModuleId` para reagir a um botão.
+- `optionSelect`: informe `targetModuleId` e, se necessário, `targetOptionId`.
