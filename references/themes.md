@@ -113,10 +113,10 @@ update_funnel_global_presets({
       interactionEffects: {
         enabled: true,
         rules: [
-          { trigger: "buttonClick", enabled: true, vibration: { enabled: true, preset: "light" } },
-          { trigger: "optionSelect", enabled: true, vibration: { enabled: true, preset: "light" }, visual: { enabled: true, effect: "successPulse", color: "#c0932a" } },
-          { trigger: "formValidationError", enabled: true, vibration: { enabled: true, preset: "impact" }, visual: { enabled: true, effect: "shake", color: "#ef4444" } },
-          { trigger: "flowComplete", enabled: true, vibration: { enabled: true, preset: "success" }, visual: { enabled: true, effect: "successPulse", color: "#22c55e" } }
+          { id: "button-click", label: "Clique em botao", trigger: "buttonClick", enabled: true, vibration: { enabled: true, preset: "light" }, sound: { enabled: false, audioUrl: "", volume: 0.45 }, visual: { enabled: false, effect: "successPulse", color: "#22e06f" } },
+          { id: "option-select", label: "Selecao de opcao", trigger: "optionSelect", enabled: true, vibration: { enabled: true, preset: "light" }, sound: { enabled: false, audioUrl: "", volume: 0.45 }, visual: { enabled: true, effect: "successPulse", color: "#c0932a" } },
+          { id: "form-error", label: "Erro de validacao", trigger: "formValidationError", enabled: true, vibration: { enabled: true, preset: "impact" }, sound: { enabled: false, audioUrl: "", volume: 0.45 }, visual: { enabled: true, effect: "shake", color: "#ef4444" } },
+          { id: "flow-complete", label: "Conclusao do quiz", trigger: "flowComplete", enabled: true, vibration: { enabled: true, preset: "success" }, sound: { enabled: false, audioUrl: "", volume: 0.45 }, visual: { enabled: true, effect: "successPulse", color: "#22c55e" } }
         ]
       }
     }

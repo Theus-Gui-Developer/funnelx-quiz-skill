@@ -29,6 +29,7 @@ Use esta skill quando o usuário pedir para:
 - criar um funil ou quiz na FunnelX;
 - adicionar, remover ou reorganizar etapas;
 - editar componentes e settings;
+- montar funis de forma granular, criando etapas antes dos componentes finais;
 - ajustar tema global;
 - configurar `theme.header` global sem criar header paralelo nas etapas;
 - configurar gamificação global, placar, música, efeitos por gatilho e gamificação por etapa;

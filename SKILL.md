@@ -38,7 +38,7 @@ Depois de instalada, use a skill quando o usuário pedir criação, edição, au
 - Atualize a `description` sempre que ampliar ou restringir o escopo de uso da skill.
 - Guarde documentação longa em `references/` e deixe no `SKILL.md` apenas o workflow operacional e regras críticas.
 - Não inclua segredos, tokens, URLs privadas ou dados de clientes nos arquivos da skill.
-- Prefira exemplos representativos e schemas enxutos: compactos, mas bons o bastante para mostrar quizzes elaborados da Funilix. Payloads grandes devem ser divididos em blocos, como o workflow de `append_quiz_steps`.
+- Prefira exemplos representativos e schemas enxutos: compactos, mas bons o bastante para mostrar quizzes elaborados da Funilix. Nunca gere um funil inteiro com todas as etapas e componentes finais em um único payload.
 
 ## Antes de qualquer coisa: consultar tools de contexto
 
@@ -55,17 +55,29 @@ Antes de criar ou reestruturar um funil, chame estas tools para ter contexto atu
 
 ```
 1. create_blank_funnel            → cria o funil, obtém slug e id
-2. update_funnel_global_presets   → aplica tema exclusivo do nicho
+2. update_funnel_global_presets   → aplica tema, header, form e gamificação globais
 3. list_audio_assets              → consultar antes de usar qualquer audioUrl/soundUrl
-4. append_quiz_steps (bloco 1)    → intro + Q1–Q3
-5. append_quiz_steps (bloco 2)    → Q4–Q6 + content (transição) + capture
-6. append_quiz_steps (bloco 3)    → result (diagnóstico) + content (depoimentos) + result (oferta)
-7. update_funnel_metadata         → marca conversionStepIds com o id da última etapa
-8. get_quiz_blueprint             → valida 0 warnings
+4. append_quiz_steps              → criar só a espinha dorsal das etapas em blocos pequenos
+5. get_quiz_blueprint             → capturar stepIds reais e validar estrutura de etapas
+6. create_quiz_component          → montar componentes da etapa 1
+7. update_component_settings      → ajustar settings da etapa 1 quando necessário
+8. get_quiz_blueprint             → validar a etapa montada
+9. repetir 6–8 etapa por etapa    → até finalizar diagnóstico, captura e oferta
+10. update_funnel_metadata        → marcar conversionStepIds com o id da última etapa
+11. get_quiz_blueprint            → validação final sem warnings críticos
 ```
 
-**Nunca enviar todas as etapas em um único append.** Sempre 3 blocos de no máximo 4 etapas cada.
-Use `replace_quiz_structure` apenas para estruturas curtas e controladas.
+Regra principal: **etapas primeiro, componentes depois**.
+
+- Nunca enviar todas as etapas e todos os componentes finais em um único `append_quiz_steps` ou `replace_quiz_structure`.
+- Primeiro crie a estrutura de etapas: intro, perguntas, transição, captura, diagnóstico, prova e oferta.
+- Se `append_quiz_steps` exigir `components`, use placeholders mínimos para passar validação: `text`/`button` simples, `options` mínimo em `question`, `form` + `button` mínimo em `capture`.
+- Depois use `get_quiz_blueprint` para obter `stepId` de cada etapa.
+- Monte uma etapa por vez com `create_quiz_component`, `update_component_settings` e `reorder_quiz_components`.
+- Valide com `get_quiz_blueprint` após cada etapa complexa ou após pequenos grupos de componentes.
+- Use `replace_quiz_structure` apenas para estruturas curtas e controladas.
+
+Motivo: um único erro em um componente invalida o payload inteiro. A montagem granular evita perder toda a estrutura, reduz retrabalho e economiza tokens.
 
 ---
 
@@ -153,6 +165,8 @@ Regras críticas:
 - Antes de preencher qualquer `audioUrl` ou `soundUrl`, chame `list_audio_assets` e use somente URLs retornadas pela biblioteca do usuário.
 - Nunca invente URL de áudio. Se não houver áudio disponível, deixe o recurso desligado ou peça ao usuário para enviar um arquivo.
 - Vibração, som curto e efeitos visuais ficam em `interactionEffects.rules`.
+- Toda regra de `interactionEffects.rules[]` deve ser completa: `enabled`, `trigger`, `vibration`, `sound` e `visual`.
+- Se não usar vibração, som ou visual, envie o objeto mesmo assim com `enabled: false`; nunca envie regra parcial só com `trigger`.
 - Gatilhos: `buttonClick`, `optionSelect`, `optionAutoAdvance`, `timerComplete`, `pricingClick`, `stepAdvance`, `formValidationError`, `flowComplete`.
 - Vibração: `light`, `success`, `impact`. Visual: `screenFlash`, `shake`, `successPulse`.
 - `gamifiedModal` e `iphoneToast` são componentes de etapa para mensagens com copy, imagem, CTA ou prova social.
@@ -166,6 +180,18 @@ Score/deltas:
 - `form.fields[].scoreDeltaEnabled` funciona em campos `number`.
 - `weightSlider` e `heightSlider` usam `scoreDeltaEnabled`.
 - `gamificationOverride.score` soma ao avançar a etapa.
+
+Formato seguro de regra:
+
+```json
+{
+  "enabled": true,
+  "trigger": "buttonClick",
+  "vibration": { "enabled": true, "preset": "light" },
+  "sound": { "enabled": false, "audioUrl": "", "volume": 0.45 },
+  "visual": { "enabled": false, "effect": "successPulse", "color": "#22e06f" }
+}
+```
 
 ---
 
@@ -281,7 +307,10 @@ Um quiz Funilix bem elaborado combina tema global forte, componentes nativos e p
 - [ ] `create_blank_funnel` com slug descritivo kebab-case
 - [ ] `update_funnel_global_presets` com tema exclusivo do nicho
 - [ ] Header/progresso configurado em `theme.header`, sem header paralelo nas etapas
-- [ ] 3 blocos de `append_quiz_steps` sem erro (máx 4 etapas por bloco)
+- [ ] Estrutura de etapas criada antes dos componentes finais
+- [ ] `append_quiz_steps` usado só para espinha dorsal ou placeholders mínimos
+- [ ] Componentes montados etapa por etapa com `create_quiz_component`/`update_component_settings`
+- [ ] `get_quiz_blueprint` usado para validar depois de cada etapa complexa
 - [ ] Última etapa é `result` com a oferta completa (17 componentes)
 - [ ] Todos os buttons da oferta com `actionType: url`
 - [ ] `update_funnel_metadata` com `conversionStepIds` = [id da última etapa]
@@ -319,6 +348,8 @@ Deletar etapa:       delete_quiz_step (obter stepId via blueprint)
 
 - Não começar com perguntas difíceis antes de contextualizar a promessa
 - Não pedir captura muito cedo, sem valor percebido
+- Não criar funil completo com todas as etapas e componentes finais em um único payload
+- Não regenerar tudo por causa de erro em um componente; corrija só a etapa/componente afetado
 - Não usar `replace_quiz_structure` gigante quando `append_quiz_steps` resolve
 - Não criar etapas com muitos componentes concorrendo por atenção
 - Não criar header paralelo com `text`, `image`, `layoutContainer` ou `codeBlock`
